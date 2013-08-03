@@ -14,15 +14,15 @@
 #include "memstream.h"
 
 struct cellbuf {
-	unsigned int width;
-	unsigned int height;
+	int width;
+	int height;
 	struct tb_cell *cells;
 };
 
 #define CELL(buf, x, y) (buf)->cells[(y) * (buf)->width + (x)]
 #define IS_CURSOR_HIDDEN(cx, cy) (cx == -1 || cy == -1)
 
-#define LAST_COORD_INIT 0xFFFFFFFE
+#define LAST_COORD_INIT -1
 
 static struct termios orig_tios;
 
@@ -31,8 +31,8 @@ static struct cellbuf front_buffer;
 static unsigned char write_buffer_data[32 * 1024];
 static struct memstream write_buffer;
 
-static unsigned int termw;
-static unsigned int termh;
+static int termw;
+static int termh;
 
 static int inputmode = TB_INPUT_ESC;
 
@@ -41,26 +41,26 @@ static struct ringbuffer inbuf;
 static int inout;
 static int winch_fds[2];
 
-static unsigned int lastx = LAST_COORD_INIT;
-static unsigned int lasty = LAST_COORD_INIT;
+static int lastx = LAST_COORD_INIT;
+static int lasty = LAST_COORD_INIT;
 static int cursor_x = -1;
 static int cursor_y = -1;
 
 static uint16_t background = TB_DEFAULT;
 static uint16_t foreground = TB_DEFAULT;
 
-static void write_cursor(unsigned x, unsigned y);
+static void write_cursor(int x, int y);
 static void write_sgr(uint32_t fg, uint32_t bg);
 
-static void cellbuf_init(struct cellbuf *buf, unsigned int width, unsigned int height);
-static void cellbuf_resize(struct cellbuf *buf, unsigned int width, unsigned int height);
+static void cellbuf_init(struct cellbuf *buf, int width, int height);
+static void cellbuf_resize(struct cellbuf *buf, int width, int height);
 static void cellbuf_clear(struct cellbuf *buf);
 static void cellbuf_free(struct cellbuf *buf);
 
 static void update_size(void);
 static void update_term_size(void);
 static void send_attr(uint16_t fg, uint16_t bg);
-static void send_char(unsigned int x, unsigned int y, uint32_t c);
+static void send_char(int x, int y, uint32_t c);
 static void send_clear(void);
 static void sigwinch_handler(int xxx);
 static int wait_fill_event(struct tb_event *event, struct timeval *timeout);
@@ -146,7 +146,7 @@ void tb_shutdown(void)
 
 void tb_present(void)
 {
-	unsigned int x,y;
+	int x,y;
 	struct tb_cell *back, *front;
 
 	/* invalidate cursor position */
@@ -188,25 +188,25 @@ void tb_set_cursor(int cx, int cy)
 		write_cursor(cursor_x, cursor_y);
 }
 
-void tb_put_cell(unsigned int x, unsigned int y, const struct tb_cell *cell)
+void tb_put_cell(int x, int y, const struct tb_cell *cell)
 {
 	if (x >= back_buffer.width || y >= back_buffer.height)
 		return;
 	CELL(&back_buffer, x, y) = *cell;
 }
 
-void tb_change_cell(unsigned int x, unsigned int y, uint32_t ch, uint16_t fg, uint16_t bg)
+void tb_change_cell(int x, int y, uint32_t ch, uint16_t fg, uint16_t bg)
 {
 	struct tb_cell c = {ch, fg, bg};
 	tb_put_cell(x, y, &c);
 }
 
-void tb_blit(unsigned int x, unsigned int y, unsigned int w, unsigned int h, const struct tb_cell *cells)
+void tb_blit(int x, int y, int w, int h, const struct tb_cell *cells)
 {
 	if (x+w > back_buffer.width || y+h > back_buffer.height)
 		return;
 
-	unsigned int sy;
+	int sy;
 	struct tb_cell *dst = &CELL(&back_buffer, x, y);
 	size_t size = sizeof(struct tb_cell) * w;
 
@@ -222,7 +222,7 @@ int tb_poll_event(struct tb_event *event)
 	return wait_fill_event(event, 0);
 }
 
-int tb_peek_event(struct tb_event *event, unsigned int timeout)
+int tb_peek_event(struct tb_event *event, int timeout)
 {
 	struct timeval tv;
 	tv.tv_sec = timeout / 1000;
@@ -230,12 +230,12 @@ int tb_peek_event(struct tb_event *event, unsigned int timeout)
 	return wait_fill_event(event, &tv);
 }
 
-unsigned int tb_width(void)
+int tb_width(void)
 {
 	return termw;
 }
 
-unsigned int tb_height(void)
+int tb_height(void)
 {
 	return termh;
 }
@@ -282,7 +282,7 @@ static unsigned convertnum(uint32_t num, char* buf) {
 #define WRITE_LITERAL(X) memstream_write(&write_buffer, (X), sizeof(X) -1)
 #define WRITE_INT(X) memstream_write(&write_buffer, buf, convertnum((X), buf))
 
-static void write_cursor(unsigned x, unsigned y) {
+static void write_cursor(int x, int y) {
 	char buf[32];
 	WRITE_LITERAL("\033[");
 	WRITE_INT(y+1);
@@ -315,7 +315,7 @@ static void write_sgr(uint32_t fg, uint32_t bg) {
 	}
 }
 
-static void cellbuf_init(struct cellbuf *buf, unsigned int width, unsigned int height)
+static void cellbuf_init(struct cellbuf *buf, int width, int height)
 {
 	buf->cells = (struct tb_cell*)malloc(sizeof(struct tb_cell) * width * height);
 	assert(buf->cells);
@@ -323,21 +323,21 @@ static void cellbuf_init(struct cellbuf *buf, unsigned int width, unsigned int h
 	buf->height = height;
 }
 
-static void cellbuf_resize(struct cellbuf *buf, unsigned int width, unsigned int height)
+static void cellbuf_resize(struct cellbuf *buf, int width, int height)
 {
 	if (buf->width == width && buf->height == height)
 		return;
 
-	unsigned int oldw = buf->width;
-	unsigned int oldh = buf->height;
+	int oldw = buf->width;
+	int oldh = buf->height;
 	struct tb_cell *oldcells = buf->cells;
 
 	cellbuf_init(buf, width, height);
 	cellbuf_clear(buf);
 
-	unsigned int minw = (width < oldw) ? width : oldw;
-	unsigned int minh = (height < oldh) ? height : oldh;
-	unsigned int i;
+	int minw = (width < oldw) ? width : oldw;
+	int minh = (height < oldh) ? height : oldh;
+	int i;
 
 	for (i = 0; i < minh; ++i) {
 		struct tb_cell *csrc = oldcells + (i * oldw);
@@ -350,8 +350,8 @@ static void cellbuf_resize(struct cellbuf *buf, unsigned int width, unsigned int
 
 static void cellbuf_clear(struct cellbuf *buf)
 {
-	unsigned int i;
-	unsigned int ncells = buf->width * buf->height;
+	int i;
+	int ncells = buf->width * buf->height;
 
 	for (i = 0; i < ncells; ++i) {
 		buf->cells[i].ch = ' ';
@@ -406,7 +406,7 @@ static void send_attr(uint16_t fg, uint16_t bg)
 	}
 }
 
-static void send_char(unsigned int x, unsigned int y, uint32_t c)
+static void send_char(int x, int y, uint32_t c)
 {
 	char buf[7];
 	int bw = utf8_unicode_to_char(buf, c);
