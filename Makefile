@@ -19,7 +19,7 @@ SHARED_LIBS=libtermbox.so
 ALL_LIBS=libtermbox.a
 ALL_DEMOS=keyboard_demo
 
-CFLAGS=-fPIC -O0 -g -std=gnu99 -D_GNU_SOURCE
+CFLAGS=-fPIC -O0 -g -std=c99 -D_GNU_SOURCE
 
 AR      = $(CROSS_COMPILE)ar
 RANLIB  = $(CROSS_COMPILE)ranlib
@@ -47,7 +47,7 @@ libtermbox.a: $(LIBOBJS)
 	$(RANLIB) $@
 
 libtermbox.so: $(LIBOBJS)
-	gcc -shared -o $(SHARED_LIBS) $(LIBOBJS)
+	$(CC) -shared -o $(SHARED_LIBS) $(LIBOBJS)
 
 keyboard_demo: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
@@ -59,6 +59,3 @@ $(DESTDIR)$(includedir)/%: include/%
 	install -D -m 644 $< $@
 
 .PHONY: all clean install
-
-
-
