@@ -1,25 +1,4 @@
-# Project: termbox - a ncurses alternative
+Do this at your shell:
+$ make
 
-This file describes how to build and install termbox,
-depending on your usecase.
-
-If you're a C/C++ dude, use:
-    $ make
-
-    Dependencies: gnu make
-
-If you're a Python, run:
-    $ python setup.py install
-
-    Dependencies: Cython
-
-    And go ahead and use it as:
-    >>> import termbox
-    >>> (...)
-
-    If you would like to test termbox before installing:
-    $ python setup.py build_ext --inplace
-    $ python test_termboxmodule.py
-
-    (Press ESC to exit the program)
-
+Must be GNU make
