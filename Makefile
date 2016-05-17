@@ -31,7 +31,7 @@ BUILDCFLAGS=$(CFLAGS)
 
 all: $(ALL_LIBS) $(ALL_DEMOS) $(SHARED_LIBS)
 
-install: $(ALL_LIBS:lib/%=$(DESTDIR)$(libdir)/%) $(ALL_INCLUDES:include/%=$(DESTDIR)$(includedir)/%)
+install: $(ALL_LIBS:%=$(DESTDIR)$(libdir)/%) $(ALL_INCLUDES:src/%=$(DESTDIR)$(includedir)/%)
 
 clean:
 	rm -f $(ALL_LIBS)
@@ -55,7 +55,7 @@ keyboard_demo: $(OBJS)
 $(DESTDIR)$(libdir)/%.a: %.a
 	install -D -m 755 $< $@
 
-$(DESTDIR)$(includedir)/%: include/%
+$(DESTDIR)$(includedir)/%.h: src/%.h
 	install -D -m 644 $< $@
 
 .PHONY: all clean install
