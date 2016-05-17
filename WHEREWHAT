@@ -1,4 +1,6 @@
-In this file I summarize things in termbox.
+In this file I summarize things in cursebox.
+
+Many files are yet named as "termbox", the name of the library this was forked from.
 
 SOURCES
 -------

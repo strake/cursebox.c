@@ -15,8 +15,8 @@ DEMOOBJS = $(DEMOSRC:.c=.o)
 HEADERS = src/termbox.h
 ALL_INCLUDES = $(HEADERS)
 
-DYN_LIBS=libtermbox.so
-ALL_LIBS=libtermbox.a
+DYN_LIBS=libcursebox.so
+ALL_LIBS=libcursebox.a
 ALL_DEMOS=keyboard_demo
 
 CFLAGS=-fPIC -O0 -g -std=c99 -D_GNU_SOURCE
@@ -41,12 +41,12 @@ clean:
 %.o: %.c
 	$(CC) $(BUILDCFLAGS) -c -o $@ $<
 
-libtermbox.a: $(LIBOBJS)
+libcursebox.a: $(LIBOBJS)
 	rm -f $@
 	$(AR) rc $@ $(LIBOBJS)
 	$(RANLIB) $@
 
-libtermbox.so: $(LIBOBJS)
+libcursebox.so: $(LIBOBJS)
 	$(CC) -shared -o $(DYN_LIBS) $(LIBOBJS)
 
 keyboard_demo: $(OBJS)

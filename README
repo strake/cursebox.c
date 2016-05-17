@@ -1,6 +1,6 @@
-This is a termbox library package. It is created by nsf.
+This is a cursebox library package, created by nsf as termbox and forked by strake.
 It's general purpose to serve as the simplest ncurses alternative.
 
 See NOTES for few important notes.
 See WHEREWHAT to know where things are located.
-See INSTALL for directions on building and installing termbox.
+See INSTALL for directions on building and installing cursebox.
