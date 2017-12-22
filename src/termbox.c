@@ -139,6 +139,8 @@ void tb_shutdown(void)
 	close(winch_fds[0]);
 	close(winch_fds[1]);
 
+	cursor_x = cursor_y = -1;
+
 	cellbuf_free(&back_buffer);
 	cellbuf_free(&front_buffer);
 	free_ringbuffer(&inbuf);
